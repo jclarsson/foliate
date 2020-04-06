@@ -93,8 +93,15 @@ const makeActions = app => ({
         dialog.add_filter(epubFiles)
         dialog.add_filter(allFiles)
 
-        if (dialog.run() === Gtk.ResponseType.ACCEPT)
+        if(settings.get_string('last-folder')){
+            dialog.set_current_folder(settings.get_string('last-folder'))
+        }
+
+        if (dialog.run() === Gtk.ResponseType.ACCEPT){
+            settings.set_string('last-folder', dialog.get_current_folder())
             app.active_window.open(dialog.get_file())
+
+        }
     },
     'about': () => {
         const aboutDialog = new Gtk.AboutDialog({

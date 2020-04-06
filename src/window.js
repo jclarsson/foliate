@@ -24,6 +24,7 @@ const { tts, TtsButton } = imports.tts
 const { themes, customThemes, ThemeRow, applyTheme } = imports.theme
 const { exportAnnotations } = imports.export
 const { PropertiesWindow } = imports.properties
+const { mimetypes } = imports.utils
 
 const settings = new Gio.Settings({ schema_id: pkg.name })
 const windowState = new Gio.Settings({ schema_id: pkg.name + '.window-state' })
@@ -809,7 +810,36 @@ var Window = GObject.registerClass({
         const lastFile = windowState.get_string('last-file')
         if (!this.file && settings.get_boolean('restore-last-file') && lastFile)
             this.file  = Gio.File.new_for_path(lastFile)
-        if (this.file) this.open(this.file)
+        if (this.file){this.open(this.file)}
+        else{
+            const allFiles = new Gtk.FileFilter()
+            allFiles.set_name(_('All Files'))
+            allFiles.add_pattern('*')
+
+            const epubFiles = new Gtk.FileFilter()
+            epubFiles.set_name(_('E-book Files'))
+            epubFiles.add_mime_type(mimetypes.epub)
+            epubFiles.add_mime_type(mimetypes.mobi)
+            epubFiles.add_mime_type(mimetypes.kindle)
+
+            const dialog = Gtk.FileChooserNative.new(
+                    _('Foliate: Open File'),
+                    this,
+                    Gtk.FileChooserAction.OPEN,
+                    null, null)
+            dialog.add_filter(epubFiles)
+            dialog.add_filter(allFiles)
+            
+            if(settings.get_string('last-folder')){
+                dialog.set_current_folder(settings.get_string('last-folder'))
+            }
+
+            if (dialog.run() === Gtk.ResponseType.ACCEPT){
+                settings.set_string('last-folder', dialog.get_current_folder())
+                this.open(dialog.get_file())
+
+	    	}
+        }
 
         this.connect('window-state-event', (_, event) => {
             const state = event.get_window().get_state()
